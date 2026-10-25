@@ -41,7 +41,7 @@ class IdempotencyConcurrencyTest {
     @Test
     void singlePacketDeliveredByThreeBridgesSettlesExactlyOnce() throws Exception {
         // Capture starting balances
-        BigDecimal aliceBefore = accounts.findById("alice@demo").orElseThrow().getBalance();
+        BigDecimal senderBefore = accounts.findById("alice@demo").orElseThrow().getBalance();
         BigDecimal bobBefore = accounts.findById("bob@demo").orElseThrow().getBalance();
 
         // One packet, but we'll deliver it from 3 "bridges" simultaneously
@@ -74,9 +74,9 @@ class IdempotencyConcurrencyTest {
         assertEquals(2, duplicates.get(), "the other two should be duplicates");
 
         // Balance moved exactly once
-        BigDecimal aliceAfter = accounts.findById("alice@demo").orElseThrow().getBalance();
+        BigDecimal senderAfter = accounts.findById("alice@demo").orElseThrow().getBalance();
         BigDecimal bobAfter = accounts.findById("bob@demo").orElseThrow().getBalance();
-        assertEquals(aliceBefore.subtract(new BigDecimal("100.00")), aliceAfter);
+        assertEquals(senderBefore.subtract(new BigDecimal("100.00")), senderAfter);
         assertEquals(bobBefore.add(new BigDecimal("100.00")), bobAfter);
     }
 

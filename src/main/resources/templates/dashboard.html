@@ -1,241 +1,1754 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>UPI Offline Mesh — Demo</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            margin: 0; padding: 24px; background: #0d1117; color: #e6edf3;
-        }
-        h1 { margin-top: 0; color: #f0f6fc; }
-        h2 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 4px; margin-top: 32px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .grid { display: grid; gap: 16px; }
-        .grid-2 { grid-template-columns: 1fr 1fr; }
-        .grid-3 { grid-template-columns: repeat(3, 1fr); }
-        .card {
-            background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px;
-        }
-        .device {
-            border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin-bottom: 8px;
-            background: #0d1117;
-        }
-        .device.bridge { border-color: #2ea043; background: #052e16; }
-        .device.offline { opacity: 0.85; }
-        .badge {
-            display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px;
-            font-weight: 600; margin-left: 8px;
-        }
-        .badge-online { background: #2ea043; color: white; }
-        .badge-offline { background: #6e7681; color: white; }
-        .packet-id {
-            font-family: 'Consolas', 'Monaco', monospace; font-size: 11px;
-            background: #21262d; padding: 2px 6px; border-radius: 3px; margin: 2px;
-            display: inline-block;
-        }
-        button {
-            background: #238636; color: white; border: none; padding: 8px 16px;
-            border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;
-            margin: 4px;
-        }
-        button:hover { background: #2ea043; }
-        button.danger { background: #da3633; }
-        button.danger:hover { background: #f85149; }
-        button.secondary { background: #1f6feb; }
-        button.secondary:hover { background: #388bfd; }
-        input, select {
-            background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
-            border-radius: 4px; padding: 6px 10px; font-size: 14px; margin: 4px;
-        }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; }
-        th { color: #8b949e; font-weight: 600; font-size: 12px; text-transform: uppercase; }
-        .status-SETTLED { color: #56d364; font-weight: 600; }
-        .status-REJECTED { color: #f85149; font-weight: 600; }
-        .status-DUPLICATE_DROPPED { color: #d29922; font-weight: 600; }
-        .status-INVALID { color: #f85149; font-weight: 600; }
-        #log {
-            background: #010409; color: #7ee787; padding: 12px; border-radius: 6px;
-            font-family: 'Consolas', 'Monaco', monospace; font-size: 12px;
-            max-height: 220px; overflow-y: auto; white-space: pre-wrap;
-            border: 1px solid #30363d;
-        }
-        .controls { background: #161b22; padding: 16px; border-radius: 8px;
-                    border: 1px solid #30363d; margin-bottom: 16px; }
-        .step-num {
-            display: inline-block; background: #58a6ff; color: white;
-            border-radius: 50%; width: 24px; height: 24px; text-align: center;
-            line-height: 24px; font-weight: 600; margin-right: 8px;
-        }
-        .balance { font-family: 'Consolas', monospace; color: #56d364; font-weight: 600; }
-        .small { font-size: 12px; color: #8b949e; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UPI Offline Mesh — Live Demo</title>
+  <style>
+    /* ─── Reset & Base ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-base:      #080c14;
+      --bg-surface:   #0d1220;
+      --bg-elevated:  #131928;
+      --bg-card:      #111827;
+      --border:       #1e2d45;
+      --border-light: #243349;
+      --text-primary: #e8f0fe;
+      --text-secondary:#8ba3c7;
+      --text-muted:   #4e6488;
+      --blue:         #3b82f6;
+      --blue-bright:  #60a5fa;
+      --blue-dim:     #1d4ed8;
+      --cyan:         #22d3ee;
+      --cyan-dim:     #0891b2;
+      --green:        #10b981;
+      --green-bright: #34d399;
+      --green-dim:    #065f46;
+      --amber:        #f59e0b;
+      --amber-bright: #fbbf24;
+      --amber-dim:    #78350f;
+      --red:          #ef4444;
+      --red-bright:   #f87171;
+      --red-dim:      #7f1d1d;
+      --purple:       #8b5cf6;
+      --font-mono:    'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      --radius-sm:    4px;
+      --radius:       8px;
+      --radius-lg:    12px;
+      --shadow:       0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.3);
+      --shadow-lg:    0 4px 16px rgba(0,0,0,.6);
+    }
+    html { font-size: 14px; -webkit-font-smoothing: antialiased; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+
+    /* ─── Scrollbar ─────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+    /* ─── Layout Shell ──────────────────────────────────────────────────── */
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ─── Top Nav ───────────────────────────────────────────────────────── */
+    .topnav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,12,20,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      height: 52px;
+      display: flex; align-items: center;
+      padding: 0 24px;
+      gap: 0;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: var(--text-primary);
+      flex-shrink: 0;
+    }
+    .nav-brand-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--blue-dim), var(--cyan-dim));
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-brand-icon svg { width: 16px; height: 16px; }
+    .nav-brand-title {
+      font-size: 14px; font-weight: 600;
+      letter-spacing: .02em;
+      color: var(--text-primary);
+    }
+    .nav-divider { width: 1px; height: 20px; background: var(--border); margin: 0 20px; flex-shrink: 0; }
+    .nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+    .nav-link {
+      padding: 5px 12px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500;
+      color: var(--text-secondary); text-decoration: none;
+      cursor: pointer; border: none; background: none;
+      transition: color .15s, background .15s;
+    }
+    .nav-link:hover { color: var(--text-primary); background: var(--bg-elevated); }
+    .nav-link.active { color: var(--blue-bright); background: rgba(59,130,246,.1); }
+    .nav-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: 20px;
+      background: rgba(16,185,129,.1);
+      border: 1px solid rgba(16,185,129,.25);
+      font-size: 11px; font-weight: 600; letter-spacing: .08em;
+      color: var(--green-bright); text-transform: uppercase;
+    }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green-bright);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .5; transform: scale(.8); }
+    }
+    .conn-indicator {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text-muted);
+    }
+    .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .conn-dot.offline { background: var(--red); }
+    .btn-reset-nav {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 500;
+      color: var(--red-bright); background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.2);
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-reset-nav:hover { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.4); }
+
+    /* ─── Main Content ──────────────────────────────────────────────────── */
+    .main-content { flex: 1; padding: 28px 24px; max-width: 1440px; margin: 0 auto; width: 100%; }
+
+    /* ─── Hero ──────────────────────────────────────────────────────────── */
+    .hero { margin-bottom: 28px; }
+    .hero-inner {
+      background: linear-gradient(135deg, rgba(13,18,32,.9) 0%, rgba(17,24,39,.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      position: relative; overflow: hidden;
+    }
+    .hero-inner::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--blue-dim), var(--cyan-dim), transparent);
+    }
+    .hero-glow {
+      position: absolute; top: -60px; right: -60px;
+      width: 240px; height: 240px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--cyan);
+      margin-bottom: 10px;
+    }
+    .hero-eyebrow-line { flex: 1; max-width: 40px; height: 1px; background: var(--cyan-dim); }
+    .hero-title {
+      font-size: 26px; font-weight: 700; letter-spacing: -.02em;
+      color: var(--text-primary); margin-bottom: 6px;
+    }
+    .hero-title span { color: var(--blue-bright); }
+    .hero-subtitle { font-size: 14px; color: var(--text-secondary); max-width: 520px; }
+    .hero-subtitle code {
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--cyan); background: rgba(34,211,238,.08);
+      padding: 1px 6px; border-radius: 3px;
+    }
+
+    /* lifecycle pipeline */
+    .pipeline {
+      display: flex; align-items: center; gap: 0;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .pipeline-step {
+      display: flex; align-items: center; gap: 10px;
+      flex: 1;
+    }
+    .pipeline-step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--text-muted);
+      flex-shrink: 0; transition: all .3s;
+    }
+    .pipeline-step.active .pipeline-step-num {
+      background: rgba(59,130,246,.15);
+      border-color: var(--blue);
+      color: var(--blue-bright);
+    }
+    .pipeline-step.done .pipeline-step-num {
+      background: rgba(16,185,129,.15);
+      border-color: var(--green);
+      color: var(--green-bright);
+    }
+    .pipeline-step-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+    .pipeline-step.active .pipeline-step-label { color: var(--text-primary); }
+    .pipeline-step.done .pipeline-step-label { color: var(--green-bright); }
+    .pipeline-step-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .pipeline-arrow {
+      width: 32px; text-align: center; color: var(--text-muted); font-size: 16px; flex-shrink: 0;
+    }
+
+    /* ─── KPI Row ───────────────────────────────────────────────────────── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      position: relative; overflow: hidden;
+      transition: border-color .2s;
+    }
+    .kpi-card:hover { border-color: var(--border-light); }
+    .kpi-card::after {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: var(--kpi-accent, var(--blue));
+      opacity: .6;
+    }
+    .kpi-icon-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .kpi-icon-wrap {
+      width: 32px; height: 32px; border-radius: var(--radius-sm);
+      background: var(--kpi-icon-bg, rgba(59,130,246,.12));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .kpi-icon-wrap svg { width: 16px; height: 16px; color: var(--kpi-accent, var(--blue)); }
+    .kpi-delta { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: .04em; }
+    .kpi-value {
+      font-size: 24px; font-weight: 700; letter-spacing: -.02em;
+      color: var(--text-primary); font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .kpi-label { font-size: 11px; color: var(--text-muted); margin-top: 3px; letter-spacing: .02em; }
+
+    /* ─── Main Grid ─────────────────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .col-left { display: flex; flex-direction: column; gap: 16px; }
+    .col-right { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ─── Panel Base ────────────────────────────────────────────────────── */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; color: var(--text-primary);
+      letter-spacing: .02em;
+    }
+    .panel-title svg { width: 15px; height: 15px; color: var(--text-muted); flex-shrink: 0; }
+    .panel-actions { display: flex; align-items: center; gap: 8px; }
+    .panel-body { padding: 16px 18px; }
+
+    /* ─── Buttons ───────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500; letter-spacing: .01em;
+      cursor: pointer; border: 1px solid transparent;
+      transition: all .15s; white-space: nowrap;
+      outline: none; text-decoration: none;
+    }
+    .btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .btn-primary {
+      background: var(--blue-dim); color: #fff;
+      border-color: rgba(59,130,246,.5);
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--blue); }
+    .btn-secondary {
+      background: var(--bg-elevated); color: var(--text-secondary);
+      border-color: var(--border-light);
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--bg-surface); color: var(--text-primary); border-color: var(--border); }
+    .btn-success {
+      background: rgba(16,185,129,.12); color: var(--green-bright);
+      border-color: rgba(16,185,129,.3);
+    }
+    .btn-success:hover:not(:disabled) { background: rgba(16,185,129,.2); }
+    .btn-danger {
+      background: rgba(239,68,68,.1); color: var(--red-bright);
+      border-color: rgba(239,68,68,.25);
+    }
+    .btn-danger:hover:not(:disabled) { background: rgba(239,68,68,.18); }
+    .btn-amber {
+      background: rgba(245,158,11,.1); color: var(--amber-bright);
+      border-color: rgba(245,158,11,.25);
+    }
+    .btn-amber:hover:not(:disabled) { background: rgba(245,158,11,.18); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-loading { position: relative; color: transparent !important; }
+    .btn-loading::after {
+      content: ''; position: absolute; inset: 0; margin: auto;
+      width: 13px; height: 13px; border-radius: 50%;
+      border: 2px solid currentColor;
+      border-top-color: transparent; color: #fff;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Form Elements ─────────────────────────────────────────────────── */
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-label {
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .form-control {
+      background: var(--bg-base); color: var(--text-primary);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 8px 12px; font-size: 13px; width: 100%;
+      transition: border-color .15s, box-shadow .15s;
+      font-family: inherit;
+    }
+    .form-control:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+    .form-control::placeholder { color: var(--text-muted); }
+    .form-control.error { border-color: var(--red); }
+    .form-error { font-size: 11px; color: var(--red-bright); }
+    .form-hint { font-size: 11px; color: var(--text-muted); }
+    .input-prefix-wrap { position: relative; }
+    .input-prefix {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 13px; color: var(--text-secondary); pointer-events: none;
+    }
+    .input-prefix-wrap .form-control { padding-left: 26px; }
+    .pin-wrap { position: relative; }
+    .pin-toggle {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--text-muted);
+      padding: 2px; display: flex; align-items: center;
+    }
+    .pin-toggle:hover { color: var(--text-secondary); }
+    .pin-wrap .form-control { padding-right: 32px; }
+
+    /* ─── Compose Payment Panel ─────────────────────────────────────────── */
+    .compose-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .compose-grid-full { grid-column: 1 / -1; }
+    .transfer-arrow {
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 18px; padding-top: 20px;
+    }
+    .compose-notice {
+      grid-column: 1 / -1;
+      background: rgba(59,130,246,.06);
+      border: 1px solid rgba(59,130,246,.18);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px; color: var(--text-secondary);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .compose-notice svg { width: 13px; height: 13px; color: var(--blue-bright); flex-shrink: 0; margin-top: 1px; }
+
+    /* inject result toast */
+    .inject-result {
+      grid-column: 1 / -1;
+      background: rgba(16,185,129,.06);
+      border: 1px solid rgba(16,185,129,.2);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: none;
+    }
+    .inject-result.show { display: block; }
+    .inject-result-title { font-size: 12px; font-weight: 600; color: var(--green-bright); margin-bottom: 6px; }
+    .inject-result-body { font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); line-height: 1.6; }
+
+    /* ─── Mesh Network Topology ─────────────────────────────────────────── */
+    .topology-wrap {
+      position: relative; width: 100%;
+      padding-bottom: 55%; /* aspect ratio ~16:9 ish */
+      background: radial-gradient(ellipse at 50% 50%, rgba(59,130,246,.04) 0%, transparent 70%);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .topology-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+    }
+
+    /* Network node styles */
+    .node-wrap {
+      position: absolute; transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      width: 90px; text-align: center;
+    }
+    .node-circle {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border-light);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; cursor: default;
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .node-circle svg { width: 22px; height: 22px; }
+    .node-circle.bridge {
+      border-color: var(--green);
+      background: rgba(16,185,129,.08);
+      box-shadow: 0 0 0 4px rgba(16,185,129,.08), 0 0 20px rgba(16,185,129,.15);
+    }
+    .node-circle.has-packets {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 4px rgba(245,158,11,.06), 0 0 12px rgba(245,158,11,.15);
+    }
+    .node-circle.pulse-anim {
+      animation: node-pulse .7s ease-out;
+    }
+    @keyframes node-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(245,158,11,.5); }
+      100% { box-shadow: 0 0 0 16px rgba(245,158,11,0); }
+    }
+    .node-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+    .node-status {
+      font-size: 10px; font-weight: 600; letter-spacing: .05em;
+      padding: 2px 6px; border-radius: 10px;
+    }
+    .node-status.online  { background: rgba(16,185,129,.15); color: var(--green-bright); }
+    .node-status.offline { background: rgba(78,100,136,.2); color: var(--text-muted); }
+    .node-packets {
+      font-size: 10px; color: var(--amber);
+      font-family: var(--font-mono);
+    }
+    .node-packets.zero { color: var(--text-muted); }
+
+    /* packet-id chips under each node */
+    .node-packet-ids { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 2px; }
+    .chip-packet {
+      font-family: var(--font-mono); font-size: 9px;
+      background: rgba(245,158,11,.12); color: var(--amber);
+      border: 1px solid rgba(245,158,11,.2); border-radius: 3px;
+      padding: 1px 5px; letter-spacing: .02em;
+    }
+
+    /* traveling packet dot animation */
+    .packet-traveler {
+      position: absolute;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--amber-bright);
+      box-shadow: 0 0 6px var(--amber);
+      pointer-events: none;
+      animation: travel linear forwards;
+    }
+    @keyframes travel {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+
+    /* edge SVG lines */
+    .edge-line {
+      stroke: var(--border-light);
+      stroke-width: 1.5;
+      stroke-dasharray: 6 4;
+      fill: none;
+      opacity: .5;
+      animation: dash-move 20s linear infinite;
+    }
+    .edge-line.active {
+      stroke: var(--blue-dim);
+      opacity: .7;
+      animation: dash-move 4s linear infinite;
+    }
+    @keyframes dash-move { to { stroke-dashoffset: -100; } }
+
+    /* topology legend */
+    .topo-legend {
+      display: flex; align-items: center; gap: 16px;
+      padding: 10px 18px;
+      border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* network controls bar */
+    .net-controls {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 12px 18px; border-top: 1px solid var(--border);
+    }
+    .gossip-counter {
+      margin-left: auto;
+      font-size: 11px; color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Accounts Table ────────────────────────────────────────────────── */
+    .accounts-list { display: flex; flex-direction: column; gap: 0; }
+    .account-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 18px;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .account-row:last-child { border-bottom: none; }
+    .account-row:hover { background: var(--bg-elevated); }
+    .account-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+      color: #fff;
+    }
+    .account-info { flex: 1; min-width: 0; }
+    .account-vpa { font-size: 12px; color: var(--text-primary); font-weight: 500; }
+    .account-name { font-size: 11px; color: var(--text-muted); }
+    .account-balance {
+      font-size: 14px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+    }
+    .balance-changed {
+      animation: balance-flash .6s ease;
+    }
+    @keyframes balance-flash {
+      0%   { color: var(--green-bright); }
+      100% { color: var(--text-primary); }
+    }
+    .accounts-footer {
+      padding: 8px 18px;
+      font-size: 10px; color: var(--text-muted);
+      text-align: center;
+      border-top: 1px solid var(--border);
+      letter-spacing: .03em;
+    }
+
+    /* ─── Transaction Ledger ────────────────────────────────────────────── */
+    .tx-table-wrap { overflow-x: auto; }
+    table.tx-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+      min-width: 700px;
+    }
+    .tx-table th {
+      text-align: left; padding: 9px 14px;
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap; background: var(--bg-elevated);
+    }
+    .tx-table td {
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .tx-table tbody tr { transition: background .12s; }
+    .tx-table tbody tr:hover { background: var(--bg-elevated); }
+    .tx-table tbody tr:last-child td { border-bottom: none; }
+    .tx-id {
+      font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+    }
+    .tx-vpa { font-size: 12px; color: var(--text-secondary); }
+    .tx-amount {
+      font-family: var(--font-mono); font-weight: 700;
+      color: var(--text-primary); font-variant-numeric: tabular-nums;
+      text-align: right; white-space: nowrap;
+    }
+    .tx-time { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .hop-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 11px; font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    /* status badges */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 10px;
+      font-size: 10px; font-weight: 700; letter-spacing: .06em;
+      white-space: nowrap;
+    }
+    .status-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .badge-SETTLED          { background: rgba(16,185,129,.1);  color: var(--green-bright);  border: 1px solid rgba(16,185,129,.25); }
+    .badge-REJECTED         { background: rgba(239,68,68,.1);   color: var(--red-bright);    border: 1px solid rgba(239,68,68,.25); }
+    .badge-DUPLICATE_DROPPED{ background: rgba(245,158,11,.1);  color: var(--amber-bright);  border: 1px solid rgba(245,158,11,.25); }
+    .badge-INVALID          { background: rgba(239,68,68,.1);   color: var(--red-bright);    border: 1px solid rgba(239,68,68,.25); }
+
+    /* empty / loading states */
+    .empty-state {
+      text-align: center; padding: 40px 20px;
+      color: var(--text-muted); font-size: 13px;
+    }
+    .empty-state svg { width: 36px; height: 36px; margin-bottom: 10px; opacity: .4; }
+    .empty-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+
+    /* ─── Activity Log ──────────────────────────────────────────────────── */
+    .log-scroll {
+      max-height: 280px; overflow-y: auto;
+      padding: 0 18px; background: transparent;
+    }
+    .log-entry {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(30,45,69,.5);
+      font-size: 12px;
+    }
+    .log-entry:last-child { border-bottom: none; }
+    .log-time {
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--text-muted); white-space: nowrap;
+      margin-top: 2px; min-width: 64px;
+    }
+    .log-sev {
+      width: 6px; height: 6px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 5px;
+    }
+    .log-sev.info    { background: var(--blue-bright); }
+    .log-sev.success { background: var(--green-bright); }
+    .log-sev.warn    { background: var(--amber-bright); }
+    .log-sev.error   { background: var(--red-bright); }
+    .log-msg { color: var(--text-secondary); flex: 1; line-height: 1.5; }
+    .log-msg strong { color: var(--text-primary); font-weight: 600; }
+    .log-msg code {
+      font-family: var(--font-mono); font-size: 10px;
+      background: rgba(255,255,255,.04); padding: 0 5px;
+      border-radius: 3px; color: var(--cyan);
+    }
+    .log-empty { text-align: center; padding: 24px; font-size: 12px; color: var(--text-muted); }
+
+    /* ─── Security Panel ────────────────────────────────────────────────── */
+    .security-steps { display: flex; flex-direction: column; gap: 0; }
+    .security-step {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 18px; border-bottom: 1px solid var(--border);
+    }
+    .security-step:last-child { border-bottom: none; }
+    .sec-icon {
+      width: 28px; height: 28px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .sec-icon svg { width: 14px; height: 14px; }
+    .sec-body { flex: 1; }
+    .sec-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .sec-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .sec-check {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: rgba(16,185,129,.12); color: var(--green-bright);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 4px;
+    }
+    .sec-check svg { width: 10px; height: 10px; }
+
+    /* ─── Architecture strip ────────────────────────────────────────────── */
+    .arch-strip {
+      display: flex; align-items: center; gap: 0;
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .arch-node {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      flex-shrink: 0; padding: 0 8px;
+    }
+    .arch-icon {
+      width: 34px; height: 34px; border-radius: var(--radius-sm);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .arch-icon svg { width: 16px; height: 16px; color: var(--text-muted); }
+    .arch-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+    .arch-arrow { font-size: 14px; color: var(--border-light); flex-shrink: 0; }
+
+    /* ─── Reset Dialog ──────────────────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+      z-index: 200;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px;
+      max-width: 400px; width: 90%; box-shadow: var(--shadow-lg);
+    }
+    .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .modal-body { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* ─── Toast ─────────────────────────────────────────────────────────── */
+    #toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 300;
+      display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+    }
+    .toast {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 14px;
+      font-size: 12px; color: var(--text-primary); max-width: 300px;
+      box-shadow: var(--shadow-lg);
+      animation: toast-in .2s ease; display: flex; align-items: center; gap: 8px;
+    }
+    .toast.success { border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.08); }
+    .toast.error   { border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.08); }
+    .toast.info    { border-color: rgba(59,130,246,.3); background: rgba(59,130,246,.08); }
+    .toast svg { width: 14px; height: 14px; flex-shrink: 0; }
+    @keyframes toast-in { from { opacity:0; transform: translateX(12px); } to { opacity:1; transform: translateX(0); } }
+
+    /* ─── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 1100px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .col-right { flex-direction: row; flex-wrap: wrap; }
+      .col-right > .panel { flex: 1; min-width: 280px; }
+    }
+    @media (max-width: 800px) {
+      .kpi-row { grid-template-columns: repeat(3, 1fr); }
+      .compose-grid { grid-template-columns: 1fr; }
+      .transfer-arrow { display: none; }
+      .pipeline { flex-direction: column; gap: 12px; align-items: flex-start; }
+      .pipeline-arrow { transform: rotate(90deg); }
+      .main-content { padding: 16px 14px; }
+      .topnav { padding: 0 14px; }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 540px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <h1>📡 UPI Offline Mesh — Live Demo</h1>
-    <p class="small">
-        Send money in a basement with zero internet. Encrypted packets gossip from phone to phone
-        until one with 4G reaches the backend.
-    </p>
+<div class="app-shell">
 
-    <div class="controls">
-        <h3 style="margin-top:0">🎬 Demo Flow</h3>
-
-        <div>
-            <span class="step-num">1</span><strong>Compose payment</strong> (simulates sender phone)
-            <br>
-            <select id="senderVpa">
-                <option>alice@demo</option>
-                <option>bob@demo</option>
-                <option>carol@demo</option>
-            </select>
-            →
-            <select id="receiverVpa">
-                <option>bob@demo</option>
-                <option>carol@demo</option>
-                <option>alice@demo</option>
-                <option>dave@demo</option>
-            </select>
-            ₹<input type="number" id="amount" value="500" style="width: 100px">
-            PIN <input type="text" id="pin" value="1234" style="width: 80px" maxlength="4">
-            <button onclick="sendPacket()">📤 Inject into Mesh</button>
-        </div>
-
-        <div style="margin-top: 16px">
-            <span class="step-num">2</span><strong>Gossip</strong> — packets hop device-to-device
-            <button class="secondary" onclick="gossip()">🔄 Run Gossip Round</button>
-        </div>
-
-        <div style="margin-top: 16px">
-            <span class="step-num">3</span><strong>Bridge node walks outside, hits 4G</strong>
-            <button class="secondary" onclick="flushBridges()">📡 Bridges Upload to Backend</button>
-            <span class="small">(parallel — exercises idempotency)</span>
-        </div>
-
-        <div style="margin-top: 16px">
-            <button class="danger" onclick="resetMesh()">🗑 Reset Mesh + Cache</button>
-        </div>
+  <!-- ─── Top Navigation ────────────────────────────────────────────── -->
+  <nav class="topnav" role="navigation" aria-label="Main navigation">
+    <a class="nav-brand" href="/" aria-label="UPI Offline Mesh home">
+      <div class="nav-brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span class="nav-brand-title">UPI Offline Mesh</span>
+    </a>
+    <div class="nav-divider" aria-hidden="true"></div>
+    <div class="nav-links" role="list">
+      <span class="nav-link active" role="listitem">Overview</span>
+      <span class="nav-link" role="listitem" onclick="scrollToSection('network-section')">Network</span>
+      <span class="nav-link" role="listitem" onclick="scrollToSection('ledger-section')">Ledger</span>
+      <span class="nav-link" role="listitem" onclick="scrollToSection('security-section')">Security</span>
     </div>
+    <div class="nav-right">
+      <div class="live-badge" aria-label="Live simulation active">
+        <div class="live-dot" aria-hidden="true"></div>
+        Live Simulation
+      </div>
+      <div class="conn-indicator" aria-live="polite">
+        <div class="conn-dot" id="conn-dot" aria-hidden="true"></div>
+        <span id="conn-status">Backend</span>
+      </div>
+      <button class="btn-reset-nav" onclick="openResetDialog()" aria-label="Reset simulation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+        </svg>
+        Reset
+      </button>
+    </div>
+  </nav>
 
-    <div class="grid grid-2">
-        <div class="card">
-            <h2>📱 Mesh Devices</h2>
-            <div id="devices"></div>
+  <!-- ─── Main Content ──────────────────────────────────────────────── -->
+  <main class="main-content" role="main">
+
+    <!-- Hero -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-inner">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-eyebrow" aria-hidden="true">
+          <div class="hero-eyebrow-line"></div>
+          Mesh Payment Simulator
+          <div class="hero-eyebrow-line"></div>
+        </div>
+        <h1 class="hero-title" id="hero-title">
+          Offline <span>Payment Network</span>
+        </h1>
+        <p class="hero-subtitle">
+          Encrypted payments travel peer-to-peer via <code>Bluetooth mesh</code> until
+          an internet-connected bridge device uploads them for settlement.
+        </p>
+        <div class="pipeline" aria-label="Payment lifecycle stages">
+          <div class="pipeline-step" id="stage-compose">
+            <div class="pipeline-step-num" aria-hidden="true">1</div>
+            <div>
+              <div class="pipeline-step-label">Compose</div>
+              <div class="pipeline-step-desc">Encrypt &amp; inject packet</div>
+            </div>
+          </div>
+          <div class="pipeline-arrow" aria-hidden="true">›</div>
+          <div class="pipeline-step" id="stage-propagate">
+            <div class="pipeline-step-num" aria-hidden="true">2</div>
+            <div>
+              <div class="pipeline-step-label">Propagate</div>
+              <div class="pipeline-step-desc">Gossip across mesh</div>
+            </div>
+          </div>
+          <div class="pipeline-arrow" aria-hidden="true">›</div>
+          <div class="pipeline-step" id="stage-settle">
+            <div class="pipeline-step-num" aria-hidden="true">3</div>
+            <div>
+              <div class="pipeline-step-label">Settle</div>
+              <div class="pipeline-step-desc">Bridge uploads → debit/credit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Row -->
+    <section class="kpi-row" aria-label="Key metrics" id="kpi-row">
+      <div class="kpi-card" style="--kpi-accent:var(--blue); --kpi-icon-bg:rgba(59,130,246,.12)">
+        <div class="kpi-icon-row">
+          <div class="kpi-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          <span class="kpi-delta">DEVICES</span>
+        </div>
+        <div class="kpi-value" id="kpi-devices">—</div>
+        <div class="kpi-label">Active Mesh Devices</div>
+      </div>
+      <div class="kpi-card" style="--kpi-accent:var(--amber); --kpi-icon-bg:rgba(245,158,11,.12)">
+        <div class="kpi-icon-row">
+          <div class="kpi-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <span class="kpi-delta">IN FLIGHT</span>
+        </div>
+        <div class="kpi-value" id="kpi-packets">—</div>
+        <div class="kpi-label">Packets in Circulation</div>
+      </div>
+      <div class="kpi-card" style="--kpi-accent:var(--green); --kpi-icon-bg:rgba(16,185,129,.12)">
+        <div class="kpi-icon-row">
+          <div class="kpi-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span class="kpi-delta">SETTLED</span>
+        </div>
+        <div class="kpi-value" id="kpi-settled">—</div>
+        <div class="kpi-label">Settled Transactions</div>
+      </div>
+      <div class="kpi-card" style="--kpi-accent:var(--cyan); --kpi-icon-bg:rgba(34,211,238,.12)">
+        <div class="kpi-icon-row">
+          <div class="kpi-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <span class="kpi-delta">DEMO VALUE</span>
+        </div>
+        <div class="kpi-value" id="kpi-value">—</div>
+        <div class="kpi-label">Total Settled Value</div>
+      </div>
+      <div class="kpi-card" style="--kpi-accent:var(--purple); --kpi-icon-bg:rgba(139,92,246,.12)">
+        <div class="kpi-icon-row">
+          <div class="kpi-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <span class="kpi-delta">IDEMPOTENCY</span>
+        </div>
+        <div class="kpi-value" id="kpi-dedup">—</div>
+        <div class="kpi-label">Duplicates Prevented</div>
+      </div>
+    </section>
+
+    <!-- Main Two-Column Grid -->
+    <div class="main-grid">
+      <!-- Left Column -->
+      <div class="col-left">
+
+        <!-- Compose Payment -->
+        <div class="panel" id="compose-section" aria-labelledby="compose-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              <span id="compose-title">Compose Payment</span>
+            </div>
+            <div class="panel-actions">
+              <span style="font-size:11px;color:var(--text-muted)">Step 1 of 3</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="compose-grid">
+              <div class="form-group">
+                <label class="form-label" for="senderVpa">Sender</label>
+                <select class="form-control" id="senderVpa" aria-required="true">
+                  <option value="alice@demo">alice@demo</option>
+                  <option value="bob@demo">bob@demo</option>
+                  <option value="carol@demo">carol@demo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="receiverVpa">Receiver</label>
+                <select class="form-control" id="receiverVpa" aria-required="true">
+                  <option value="bob@demo">bob@demo</option>
+                  <option value="carol@demo">carol@demo</option>
+                  <option value="alice@demo">alice@demo</option>
+                  <option value="dave@demo">dave@demo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="amount">Amount</label>
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix" aria-hidden="true">₹</span>
+                  <input type="number" class="form-control" id="amount" value="500" min="1" max="100000" step="1" aria-required="true" />
+                </div>
+                <span class="form-hint" id="amount-hint"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pin">UPI PIN</label>
+                <div class="pin-wrap">
+                  <input type="password" class="form-control" id="pin" value="1234" maxlength="6" autocomplete="off" aria-required="true" aria-describedby="pin-desc" />
+                  <button class="pin-toggle" type="button" onclick="togglePin(this)" aria-label="Show or hide PIN">
+                    <svg id="pin-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+                <span class="form-hint" id="pin-desc">4–6 digit PIN, hashed before encryption</span>
+              </div>
+
+              <div class="compose-notice">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Payment is RSA-OAEP + AES-GCM encrypted on compose. It will remain unsettled until
+                a bridge device uploads it in Step 3. No money moves yet.
+              </div>
+
+              <div class="inject-result" id="inject-result" role="status" aria-live="polite">
+                <div class="inject-result-title">Packet injected into mesh</div>
+                <div class="inject-result-body" id="inject-result-body"></div>
+              </div>
+
+              <div class="compose-grid-full" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-primary" id="btn-inject" onclick="sendPacket()" aria-label="Encrypt and inject payment into mesh">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Inject into Mesh
+                </button>
+                <span id="compose-error" class="form-error" role="alert" aria-live="assertive"></span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="card">
-            <h2>🏦 Account Balances</h2>
-            <table id="accounts-table">
-                <thead><tr><th>VPA</th><th>Holder</th><th>Balance</th></tr></thead>
-                <tbody></tbody>
+        <!-- Mesh Network Topology -->
+        <div class="panel" id="network-section" aria-labelledby="network-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
+              <span id="network-title">Mesh Network Topology</span>
+            </div>
+            <span style="font-size:11px;color:var(--text-muted)">Step 2 of 3 — Simulated topology</span>
+          </div>
+
+          <div style="position:relative;padding:16px 18px 0;">
+            <div class="topology-wrap" id="topology-wrap" role="img" aria-label="Mesh network topology showing 5 virtual devices">
+              <!-- SVG edges drawn by JS -->
+              <svg class="topology-svg" id="topology-svg" aria-hidden="true"></svg>
+              <!-- Device nodes injected by JS -->
+              <div id="topology-nodes" style="position:absolute;inset:0;pointer-events:none;"></div>
+            </div>
+          </div>
+
+          <div class="topo-legend" aria-label="Topology legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--green)" aria-hidden="true"></div> Internet Bridge (4G)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--text-muted)" aria-hidden="true"></div> Offline Mesh Phone</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--amber)" aria-hidden="true"></div> Holding Packet(s)</div>
+            <div class="legend-item" style="margin-left:auto;font-size:10px;color:var(--text-muted)">Connections are simulated BLE topology</div>
+          </div>
+
+          <div class="net-controls">
+            <button class="btn btn-secondary" id="btn-gossip" onclick="gossip()" aria-label="Run one gossip round to propagate packets">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+              Run Gossip Round
+            </button>
+            <button class="btn btn-success" id="btn-flush" onclick="flushBridges()" aria-label="Bridge devices upload packets to backend for settlement">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Bridges Upload — Step 3
+            </button>
+            <span class="gossip-counter" id="gossip-counter" aria-live="polite">Gossip rounds: <strong id="gossip-count">0</strong></span>
+          </div>
+        </div>
+
+        <!-- Transaction Ledger -->
+        <div class="panel" id="ledger-section" aria-labelledby="ledger-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span id="ledger-title">Transaction Ledger</span>
+            </div>
+            <span style="font-size:11px;color:var(--text-muted)" id="tx-count-label">Last 20 records</span>
+          </div>
+          <div class="tx-table-wrap">
+            <table class="tx-table" aria-label="Transaction ledger">
+              <thead>
+                <tr>
+                  <th scope="col">Packet ID</th>
+                  <th scope="col">Sender</th>
+                  <th scope="col">Receiver</th>
+                  <th scope="col" style="text-align:right">Amount</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Bridge</th>
+                  <th scope="col">Hops</th>
+                  <th scope="col">Settled At</th>
+                </tr>
+              </thead>
+              <tbody id="tx-tbody"></tbody>
             </table>
-            <p class="small" id="cacheInfo"></p>
+            <div id="tx-empty" class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="empty-title">No transactions yet</div>
+              <div>Inject a payment, run gossip, then flush bridges to see settlements here.</div>
+            </div>
+          </div>
         </div>
-    </div>
 
-    <div class="card" style="margin-top: 16px">
-        <h2>📜 Transaction Ledger</h2>
-        <table id="tx-table">
-            <thead><tr>
-                <th>ID</th><th>From</th><th>To</th><th>Amount</th>
-                <th>Status</th><th>Bridge</th><th>Hops</th><th>Settled</th>
-            </tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
+      </div><!-- /col-left -->
 
-    <div class="card" style="margin-top: 16px">
-        <h2>🪵 Activity Log</h2>
-        <div id="log"></div>
-    </div>
+      <!-- Right Column -->
+      <div class="col-right">
+
+        <!-- Account Balances -->
+        <div class="panel" aria-labelledby="accounts-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <span id="accounts-title">Demo Accounts</span>
+            </div>
+          </div>
+          <div class="accounts-list" id="accounts-list" role="list" aria-label="Demo account balances">
+            <!-- populated by JS -->
+          </div>
+          <div class="accounts-footer">SIMULATED DEMO ACCOUNTS — NOT REAL BANK ACCOUNTS</div>
+        </div>
+
+        <!-- Security Pipeline -->
+        <div class="panel" id="security-section" aria-labelledby="security-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span id="security-title">Security Pipeline</span>
+            </div>
+          </div>
+          <div class="security-steps">
+            <div class="security-step">
+              <div class="sec-icon" style="background:rgba(245,158,11,.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div class="sec-body">
+                <div class="sec-title">RSA-OAEP + AES-256-GCM</div>
+                <div class="sec-desc">Hybrid encryption: AES session key wrapped in RSA-2048 public key</div>
+              </div>
+              <div class="sec-check" aria-label="Verified">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+            <div class="security-step">
+              <div class="sec-icon" style="background:rgba(59,130,246,.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="sec-body">
+                <div class="sec-title">SHA-256 Ciphertext Fingerprint</div>
+                <div class="sec-desc">Hash gates the idempotency claim — tampering changes the hash</div>
+              </div>
+              <div class="sec-check" aria-label="Verified">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+            <div class="security-step">
+              <div class="sec-icon" style="background:rgba(139,92,246,.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="sec-body">
+                <div class="sec-title">Freshness &amp; Replay Protection</div>
+                <div class="sec-desc">signedAt timestamp rejects stale or future-dated packets</div>
+              </div>
+              <div class="sec-check" aria-label="Verified">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+            <div class="security-step">
+              <div class="sec-icon" style="background:rgba(16,185,129,.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="sec-body">
+                <div class="sec-title">Atomic Idempotency Claim</div>
+                <div class="sec-desc">CAS-style lock prevents duplicate settlements under concurrency</div>
+              </div>
+              <div class="sec-check" aria-label="Verified">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+            <div class="security-step">
+              <div class="sec-icon" style="background:rgba(34,211,238,.1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div class="sec-body">
+                <div class="sec-title">Transactional Settlement</div>
+                <div class="sec-desc">Optimistic locking on accounts; DB unique constraint as fallback</div>
+              </div>
+              <div class="sec-check" aria-label="Verified">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Architecture strip -->
+          <div class="arch-strip" aria-label="System architecture">
+            <div class="arch-node">
+              <div class="arch-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </div>
+              <div class="arch-label">Sender</div>
+            </div>
+            <div class="arch-arrow" aria-hidden="true">›</div>
+            <div class="arch-node">
+              <div class="arch-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
+              </div>
+              <div class="arch-label">Mesh Relays</div>
+            </div>
+            <div class="arch-arrow" aria-hidden="true">›</div>
+            <div class="arch-node">
+              <div class="arch-icon" style="border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.06)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+              </div>
+              <div class="arch-label">Bridge</div>
+            </div>
+            <div class="arch-arrow" aria-hidden="true">›</div>
+            <div class="arch-node">
+              <div class="arch-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="arch-label">Backend</div>
+            </div>
+            <div class="arch-arrow" aria-hidden="true">›</div>
+            <div class="arch-node">
+              <div class="arch-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              </div>
+              <div class="arch-label">Ledger</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="panel" aria-labelledby="log-title">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span id="log-title">Activity Log</span>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="clearLog()" aria-label="Clear activity log">Clear</button>
+          </div>
+          <div class="log-scroll" id="log-scroll" role="log" aria-live="polite" aria-label="Activity log">
+            <div class="log-empty" id="log-empty">No events yet. Start by injecting a payment.</div>
+          </div>
+        </div>
+
+      </div><!-- /col-right -->
+    </div><!-- /main-grid -->
+
+  </main>
 </div>
 
+<!-- Reset Confirmation Dialog -->
+<div class="modal-backdrop" id="reset-modal" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+  <div class="modal">
+    <div class="modal-title" id="reset-modal-title">Reset Simulation?</div>
+    <div class="modal-body">
+      This will clear all mesh packets, the idempotency cache, and reset all device states.
+      <strong>Account balances are not restored</strong> — reload the page to restart from scratch.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeResetDialog()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmReset()" id="btn-confirm-reset">Reset Mesh</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
 <script>
-function log(msg) {
-    const el = document.getElementById('log');
-    el.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n' + el.textContent;
+/* ═══════════════════════════════════════════════════════════════════════════
+   UPI Offline Mesh Dashboard — Frontend Logic
+   All data sourced from existing backend APIs. No fabricated values.
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── State ───────────────────────────────────────────────────────────── */
+let gossipRounds = 0;
+let lastBalances = {};
+let totalDuplicatesPrevented = 0;
+let refreshPending = false;
+let isRefreshing = false;
+
+const AVATAR_COLORS = ['#3b82f6','#8b5cf6','#06b6d4','#f59e0b','#10b981'];
+
+/* ─── Dynamic layout: chain topology left-to-right ───────────────────── */
+// Positions are computed once per unique device list and cached so nodes
+// don't jump on every 3-second refresh.
+let _positionCache = {};   // deviceId → {x, y}
+let _edgeCache     = [];   // [[src, dst], ...]
+let _lastDeviceKey = '';   // serialised device-id list to detect changes
+
+function buildChainLayout(devices) {
+  const relays  = devices.filter(d => !d.hasInternet);
+  const bridges = devices.filter(d =>  d.hasInternet);
+
+  const positions = {};
+
+  // ── Relay chain (left side, zigzag) ──────────────────────────────────
+  // Phones that have no internet fan out from left to roughly 60% width.
+  // Zigzag vertically so adjacent hops have a visible angle to them.
+  const relayCount = relays.length;
+  const xStart = 12, xEnd = Math.min(12 + relayCount * 16, 62);
+  const xStep  = relayCount > 1 ? (xEnd - xStart) / (relayCount - 1) : 0;
+  const yHigh  = 28, yLow = 72;   // zigzag rails
+
+  relays.forEach((d, i) => {
+    const x = relayCount === 1 ? 35 : Math.round(xStart + i * xStep);
+    // Zigzag: even indices high, odd indices low
+    const y = relayCount <= 2 ? 50
+            : i % 2 === 0     ? yHigh
+                              : yLow;
+    positions[d.deviceId] = { x, y };
+  });
+
+  // ── Bridge nodes (right side, spread diagonally) ──────────────────────
+  // Each bridge gets a distinct position so they don't overlap.
+  // With 1 bridge: centre-right. With 2+: fan out diagonally top-right to
+  // bottom-right so they look like separate devices.
+  const bridgeCount = bridges.length;
+  bridges.forEach((d, i) => {
+    let x, y;
+    if (bridgeCount === 1) {
+      x = 85; y = 50;
+    } else {
+      // Spread diagonally: first bridge top-right, last bottom-right
+      const t = i / (bridgeCount - 1);   // 0 → 1
+      x = Math.round(78 + t * 10);       // 78% → 88%
+      y = Math.round(20 + t * 60);       // 20% → 80%
+    }
+    positions[d.deviceId] = { x, y };
+  });
+
+  // ── Edges: strict chain only ──────────────────────────────────────────
+  // relay[0] → relay[1] → … → relay[N-1] → each bridge
+  // No cross-edges between non-adjacent nodes.
+  const edges = [];
+  for (let i = 0; i < relays.length - 1; i++) {
+    edges.push([relays[i].deviceId, relays[i + 1].deviceId]);
+  }
+  const lastRelay = relays.length > 0 ? relays[relays.length - 1] : null;
+  if (lastRelay) {
+    bridges.forEach(b => edges.push([lastRelay.deviceId, b.deviceId]));
+  } else {
+    // Only bridge nodes — connect them in sequence
+    for (let i = 0; i < bridges.length - 1; i++) {
+      edges.push([bridges[i].deviceId, bridges[i + 1].deviceId]);
+    }
+  }
+
+  return { positions, edges };
 }
 
-async function refresh() {
-    // Mesh state
-    const m = await fetch('/api/mesh/state').then(r => r.json());
-    const devicesDiv = document.getElementById('devices');
-    devicesDiv.innerHTML = m.devices.map(d => `
-        <div class="device ${d.hasInternet ? 'bridge' : 'offline'}">
-            <strong>${d.deviceId}</strong>
-            <span class="badge ${d.hasInternet ? 'badge-online' : 'badge-offline'}">
-                ${d.hasInternet ? '🌐 4G' : '🚫 OFFLINE'}
-            </span>
-            <span class="small">holding ${d.packetCount} packet(s)</span>
-            <div>${d.packetIds.map(id => `<span class="packet-id">${id}</span>`).join('')}</div>
-        </div>
-    `).join('');
-    document.getElementById('cacheInfo').textContent =
-        `Idempotency cache size: ${m.idempotencyCacheSize}`;
-
-    // Accounts
-    const accs = await fetch('/api/accounts').then(r => r.json());
-    document.querySelector('#accounts-table tbody').innerHTML = accs.map(a => `
-        <tr><td>${a.vpa}</td><td>${a.holderName}</td>
-            <td class="balance">₹${parseFloat(a.balance).toFixed(2)}</td></tr>
-    `).join('');
-
-    // Transactions
-    const txs = await fetch('/api/transactions').then(r => r.json());
-    document.querySelector('#tx-table tbody').innerHTML = txs.map(t => `
-        <tr>
-            <td>${t.id}</td><td>${t.senderVpa}</td><td>${t.receiverVpa}</td>
-            <td class="balance">₹${parseFloat(t.amount).toFixed(2)}</td>
-            <td class="status-${t.status}">${t.status}</td>
-            <td>${t.bridgeNodeId}</td><td>${t.hopCount}</td>
-            <td class="small">${new Date(t.settledAt).toLocaleTimeString()}</td>
-        </tr>
-    `).join('');
+function getLayout(devices) {
+  const key = devices.map(d => d.deviceId).sort().join(',');
+  if (key === _lastDeviceKey) return { positions: _positionCache, edges: _edgeCache };
+  const { positions, edges } = buildChainLayout(devices);
+  _positionCache = positions;
+  _edgeCache     = edges;
+  _lastDeviceKey = key;
+  return { positions, edges };
 }
 
-async function sendPacket() {
-    const body = {
-        senderVpa: document.getElementById('senderVpa').value,
-        receiverVpa: document.getElementById('receiverVpa').value,
-        amount: parseFloat(document.getElementById('amount').value),
-        pin: document.getElementById('pin').value,
-        ttl: 5,
-        startDevice: 'phone-alice'
-    };
-    const r = await fetch('/api/demo/send', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-    }).then(r => r.json());
-    log(`📤 Packet ${r.packetId.substring(0,8)} encrypted & injected at ${r.injectedAt} (TTL ${r.ttl})`);
-    log(`   ciphertext (truncated): ${r.ciphertextPreview}`);
-    refresh();
+/* ─── Topology Render ────────────────────────────────────────────────── */
+function renderTopology(devices) {
+  const svg  = document.getElementById('topology-svg');
+  const wrap = document.getElementById('topology-nodes');
+  const W    = svg.clientWidth  || 600;
+  const H    = svg.clientHeight || 330;
+
+  const { positions, edges } = getLayout(devices);
+  const deviceMap = {};
+  devices.forEach(d => deviceMap[d.deviceId] = d);
+
+  // --- Draw edges
+  let edgeSVG = '';
+  edges.forEach(([a, b]) => {
+    const pa = positions[a], pb = positions[b];
+    if (!pa || !pb) return;
+    const x1 = (pa.x / 100) * W, y1 = (pa.y / 100) * H;
+    const x2 = (pb.x / 100) * W, y2 = (pb.y / 100) * H;
+    const dA = deviceMap[a], dB = deviceMap[b];
+    const active = (dA && dA.packetCount > 0) || (dB && dB.packetCount > 0);
+    edgeSVG += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="edge-line ${active ? 'active' : ''}" />`;
+  });
+  svg.innerHTML = `<defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>` + edgeSVG;
+
+  // --- Draw nodes
+  wrap.innerHTML = '';
+  devices.forEach(d => {
+    const pos = positions[d.deviceId];
+    if (!pos) return;
+    const isBridge   = d.hasInternet;
+    const hasPackets = d.packetCount > 0;
+    const shortName  = d.deviceId.replace('phone-', '');
+
+    const pktChips = d.packetIds.slice(0, 3).map(id =>
+      `<div class="chip-packet">${id}</div>`
+    ).join('');
+    const morePkts = d.packetIds.length > 3
+      ? `<div class="chip-packet">+${d.packetIds.length - 3}</div>` : '';
+
+    const nodeDiv = document.createElement('div');
+    nodeDiv.className = 'node-wrap';
+    nodeDiv.style.left = pos.x + '%';
+    nodeDiv.style.top  = pos.y + '%';
+    nodeDiv.id = 'node-' + d.deviceId;
+    nodeDiv.innerHTML = `
+      <div class="node-circle ${isBridge ? 'bridge' : ''} ${hasPackets ? 'has-packets' : ''}" id="circle-${d.deviceId}">
+        ${isBridge
+          ? `<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="${hasPackets ? 'var(--amber)' : 'var(--text-muted)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`
+        }
+      </div>
+      <div class="node-label">${shortName}</div>
+      <div class="node-status ${isBridge ? 'online' : 'offline'}">${isBridge ? '4G' : 'NO INTERNET'}</div>
+      <div class="node-packets ${hasPackets ? '' : 'zero'}">${hasPackets ? d.packetCount + ' pkt' + (d.packetCount > 1 ? 's' : '') : '0 pkts'}</div>
+      ${d.packetIds.length ? `<div class="node-packet-ids">${pktChips}${morePkts}</div>` : ''}
+    `;
+    wrap.appendChild(nodeDiv);
+  });
 }
 
-async function gossip() {
-    const r = await fetch('/api/mesh/gossip', {method: 'POST'}).then(r => r.json());
-    log(`🔄 Gossip: ${r.transfers} transfer(s) — ${JSON.stringify(r.deviceCounts)}`);
-    refresh();
-}
+function animatePacketTravelers(prevDevices, nextDevices) {
+  const prevMap = {}, nextMap = {};
+  prevDevices.forEach(d => prevMap[d.deviceId] = d.packetCount);
+  nextDevices.forEach(d => nextMap[d.deviceId] = d.packetCount);
 
-async function flushBridges() {
-    const r = await fetch('/api/mesh/flush', {method: 'POST'}).then(r => r.json());
-    log(`📡 ${r.uploadsAttempted} bridge upload(s):`);
-    r.results.forEach(res => {
-        log(`   ${res.bridgeNode} packet ${res.packetId} → ${res.outcome}` +
-            (res.reason ? ` (${res.reason})` : ''));
+  const { positions, edges } = getLayout(nextDevices);
+
+  edges.forEach(([a, b]) => {
+    // Determine which end received the packet (gained count) and which sent it.
+    const aGained = (nextMap[a] || 0) > (prevMap[a] || 0);
+    const bGained = (nextMap[b] || 0) > (prevMap[b] || 0);
+
+    // No change on either end — skip this edge entirely.
+    if (!aGained && !bGained) return;
+
+    // Dot travels FROM the node that already had packets TO the node that gained.
+    // If both gained (first gossip round spreading from alice outward), fire both.
+    const travelers = [];
+    if (bGained && (prevMap[a] || 0) > 0) travelers.push({ from: a, to: b });
+    if (aGained && (prevMap[b] || 0) > 0) travelers.push({ from: b, to: a });
+    // Fallback: if we can't determine direction (both were zero before), just animate b gaining.
+    if (travelers.length === 0 && bGained) travelers.push({ from: a, to: b });
+
+    travelers.forEach(({ from, to }) => {
+      const pa = positions[from], pb = positions[to];
+      if (!pa || !pb) return;
+
+      const wrapEl = document.getElementById('topology-wrap');
+      const W = wrapEl.clientWidth, H = wrapEl.clientHeight;
+      const dot = document.createElement('div');
+      dot.className = 'packet-traveler';
+      dot.style.left = (pa.x / 100 * W) + 'px';
+      dot.style.top  = (pa.y / 100 * H) + 'px';
+      wrapEl.appendChild(dot);
+
+      const dx   = (pb.x - pa.x) / 100 * W;
+      const dy   = (pb.y - pa.y) / 100 * H;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const dur  = Math.max(400, dist * 2.5);
+
+      dot.animate([
+        { left: (pa.x / 100 * W) + 'px', top: (pa.y / 100 * H) + 'px', opacity: 1 },
+        { left: (pb.x / 100 * W) + 'px', top: (pb.y / 100 * H) + 'px', opacity: 0 }
+      ], { duration: dur, easing: 'ease-in', fill: 'forwards' }).onfinish = () => dot.remove();
+
+      // Pulse only the destination node
+      const circle = document.getElementById('circle-' + to);
+      if (circle) {
+        circle.classList.remove('pulse-anim');
+        void circle.offsetWidth;
+        circle.classList.add('pulse-anim');
+      }
     });
-    refresh();
+  });
 }
 
-async function resetMesh() {
-    await fetch('/api/mesh/reset', {method: 'POST'});
-    log('🗑 mesh + idempotency cache cleared');
-    refresh();
+/* ─── Accounts Render ────────────────────────────────────────────────── */
+function renderAccounts(accounts) {
+  const list = document.getElementById('accounts-list');
+  list.innerHTML = accounts.map((a, i) => {
+    const balance = parseFloat(a.balance).toFixed(2);
+    const prev    = lastBalances[a.vpa];
+    const changed = prev !== undefined && prev !== a.balance;
+    if (changed) {
+      setTimeout(() => {
+        const el = document.getElementById('bal-' + a.vpa.replace('@','_'));
+        if (el) { el.classList.remove('balance-changed'); void el.offsetWidth; el.classList.add('balance-changed'); }
+      }, 50);
+    }
+    lastBalances[a.vpa] = a.balance;
+    return `
+      <div class="account-row" role="listitem">
+        <div class="account-avatar" style="background:${AVATAR_COLORS[i % AVATAR_COLORS.length]}" aria-hidden="true">
+          ${a.holderName.charAt(0).toUpperCase()}
+        </div>
+        <div class="account-info">
+          <div class="account-vpa">${a.vpa}</div>
+          <div class="account-name">${a.holderName}</div>
+        </div>
+        <div class="account-balance" id="bal-${a.vpa.replace('@','_')}" aria-label="${a.holderName} balance ₹${balance}">
+          ₹${balance}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
+/* ─── Transactions Render ────────────────────────────────────────────── */
+function renderTransactions(txs) {
+  const tbody = document.getElementById('tx-tbody');
+  const empty = document.getElementById('tx-empty');
+  if (!txs || txs.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    document.getElementById('tx-count-label').textContent = 'No records';
+    return;
+  }
+  empty.style.display = 'none';
+  document.getElementById('tx-count-label').textContent = `${txs.length} record${txs.length > 1 ? 's' : ''}`;
+
+  let totalSettled = 0, settledCount = 0;
+  tbody.innerHTML = txs.map(t => {
+    if (t.status === 'SETTLED') {
+      totalSettled += parseFloat(t.amount);
+      settledCount++;
+    }
+    const shortId = String(t.id);
+    const time = t.settledAt ? new Date(t.settledAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+    const hopLabel = t.hopCount !== undefined ? t.hopCount : '—';
+    return `
+      <tr>
+        <td class="tx-id" title="${t.packetHash || ''}">#${shortId}</td>
+        <td class="tx-vpa">${t.senderVpa}</td>
+        <td class="tx-vpa">${t.receiverVpa}</td>
+        <td class="tx-amount">₹${parseFloat(t.amount).toFixed(2)}</td>
+        <td><span class="status-badge badge-${t.status}">${t.status.replace('_', ' ')}</span></td>
+        <td class="tx-vpa" style="font-size:11px">${t.bridgeNodeId}</td>
+        <td><span class="hop-badge">${hopLabel}</span></td>
+        <td class="tx-time">${time}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // Update KPI
+  document.getElementById('kpi-settled').textContent = settledCount;
+  const valEl = document.getElementById('kpi-value');
+  valEl.textContent = totalSettled > 0 ? '₹' + totalSettled.toFixed(0) : '₹0';
+}
+
+/* ─── KPI Update ─────────────────────────────────────────────────────── */
+function updateKpis(meshState, txs) {
+  document.getElementById('kpi-devices').textContent = meshState.devices.length;
+  const totalPackets = meshState.devices.reduce((s, d) => {
+    const ids = d.packetIds || [];
+    return s + ids.length;
+  }, 0);
+  document.getElementById('kpi-packets').textContent = totalPackets;
+  document.getElementById('kpi-dedup').textContent = meshState.idempotencyCacheSize;
+}
+
+/* ─── Pipeline Stage Indicator ───────────────────────────────────────── */
+let stageState = { compose: false, propagate: false, settle: false };
+function updatePipelineStage(stage, value) {
+  stageState[stage] = value;
+  const stages = ['compose', 'propagate', 'settle'];
+  stages.forEach(s => {
+    const el = document.getElementById('stage-' + s);
+    if (!el) return;
+    el.classList.remove('active', 'done');
+    if (stageState[s]) el.classList.add('done');
+  });
+}
+
+/* ─── Main Refresh ───────────────────────────────────────────────────── */
+let prevDevices = [];
+async function refresh() {
+  if (isRefreshing) { refreshPending = true; return; }
+  isRefreshing = true;
+  try {
+    const [meshState, accounts, txs] = await Promise.all([
+      fetch('/api/mesh/state').then(r => { if (!r.ok) throw new Error('mesh'); return r.json(); }),
+      fetch('/api/accounts').then(r => { if (!r.ok) throw new Error('accounts'); return r.json(); }),
+      fetch('/api/transactions').then(r => { if (!r.ok) throw new Error('txs'); return r.json(); }),
+    ]);
+    setConnectionStatus(true);
+
+    const deviceList = meshState.devices || [];
+
+    // Animate before re-rendering
+    if (prevDevices.length > 0) {
+      animatePacketTravelers(prevDevices, deviceList);
+    }
+    prevDevices = JSON.parse(JSON.stringify(deviceList));
+
+    renderTopology(deviceList);
+    renderAccounts(accounts);
+    renderTransactions(txs);
+    updateKpis(meshState, txs);
+
+  } catch (e) {
+    setConnectionStatus(false);
+    console.error('Refresh error:', e);
+  } finally {
+    isRefreshing = false;
+    if (refreshPending) { refreshPending = false; setTimeout(refresh, 100); }
+  }
+}
+
+function setConnectionStatus(online) {
+  const dot  = document.getElementById('conn-dot');
+  const text = document.getElementById('conn-status');
+  if (online) {
+    dot.classList.remove('offline'); dot.style.background = '';
+    text.textContent = 'Backend';
+  } else {
+    dot.classList.add('offline');
+    text.textContent = 'Offline';
+  }
+}
+
+/* ─── Send Packet ────────────────────────────────────────────────────── */
+async function sendPacket() {
+  const errEl  = document.getElementById('compose-error');
+  const btn    = document.getElementById('btn-inject');
+  const result = document.getElementById('inject-result');
+  errEl.textContent = '';
+  result.classList.remove('show');
+
+  const sender   = document.getElementById('senderVpa').value;
+  const receiver = document.getElementById('receiverVpa').value;
+  const amount   = parseFloat(document.getElementById('amount').value);
+  const pin      = document.getElementById('pin').value;
+
+  // Validation
+  if (sender === receiver) { errEl.textContent = 'Sender and receiver must be different.'; return; }
+  if (!amount || amount <= 0) { errEl.textContent = 'Amount must be a positive number.'; return; }
+  if (!pin || pin.length < 4) { errEl.textContent = 'PIN must be at least 4 digits.'; return; }
+
+  btn.classList.add('btn-loading'); btn.disabled = true;
+  try {
+    const body = { senderVpa: sender, receiverVpa: receiver, amount, pin, ttl: 5, startDevice: 'phone-sender' };
+    const r = await fetch('/api/demo/send', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) {
+      const err = await r.text();
+      errEl.textContent = 'Server error: ' + (err || r.status);
+      addLog('error', `Inject failed — ${err || r.status}`);
+      return;
+    }
+    const data = await r.json();
+    const shortId = data.packetId.substring(0, 8);
+
+    document.getElementById('inject-result-body').innerHTML =
+      `Packet ID: <code>${shortId}…</code>  TTL: ${data.ttl}  Injected at: <code>${data.injectedAt}</code><br>` +
+      `Next: Run a Gossip Round to propagate, then flush bridges to settle.`;
+    result.classList.add('show');
+
+    addLog('info', `Packet <code>${shortId}</code> encrypted &amp; injected at <strong>${data.injectedAt}</strong> (TTL ${data.ttl})`);
+    updatePipelineStage('compose', true);
+    showToast('Packet injected into mesh', 'success');
+    await refresh();
+  } catch (e) {
+    errEl.textContent = 'Network error. Is the backend running?';
+    addLog('error', 'Inject request failed — ' + e.message);
+  } finally {
+    btn.classList.remove('btn-loading'); btn.disabled = false;
+  }
+}
+
+/* ─── Gossip ─────────────────────────────────────────────────────────── */
+async function gossip() {
+  const btn = document.getElementById('btn-gossip');
+  btn.classList.add('btn-loading'); btn.disabled = true;
+  try {
+    const r = await fetch('/api/mesh/gossip', { method: 'POST' });
+    if (!r.ok) { addLog('error', 'Gossip failed — ' + r.status); return; }
+    const data = await r.json();
+    gossipRounds++;
+    document.getElementById('gossip-count').textContent = gossipRounds;
+    const counts = Object.entries(data.deviceCounts).map(([k,v]) => `${k.replace('phone-','')}:${v}`).join(' ');
+    addLog('info', `Gossip round <strong>#${gossipRounds}</strong> complete — <strong>${data.transfers}</strong> transfer(s) · ${counts}`);
+    if (data.transfers > 0) updatePipelineStage('propagate', true);
+    showToast(`${data.transfers} packet transfer(s) in gossip round`, 'info');
+    await refresh();
+  } catch (e) {
+    addLog('error', 'Gossip error — ' + e.message);
+  } finally {
+    btn.classList.remove('btn-loading'); btn.disabled = false;
+  }
+}
+
+/* ─── Flush Bridges ──────────────────────────────────────────────────── */
+async function flushBridges() {
+  const btn = document.getElementById('btn-flush');
+  btn.classList.add('btn-loading'); btn.disabled = true;
+  try {
+    const r = await fetch('/api/mesh/flush', { method: 'POST' });
+    if (!r.ok) { addLog('error', 'Flush failed — ' + r.status); return; }
+    const data = await r.json();
+    addLog('info', `Bridge upload — <strong>${data.uploadsAttempted}</strong> attempt(s)`);
+    let settledAny = false;
+    data.results.forEach(res => {
+      const sev = res.outcome === 'SETTLED' ? 'success' : res.outcome === 'DUPLICATE_DROPPED' ? 'warn' : 'error';
+      const label = res.outcome === 'DUPLICATE_DROPPED' ? 'Duplicate dropped' : res.outcome;
+      const reason = res.reason ? ` — ${res.reason}` : '';
+      addLog(sev, `<strong>${res.bridgeNode}</strong> · pkt <code>${res.packetId}</code> → <strong>${label}</strong>${reason}`);
+      if (res.outcome === 'SETTLED') settledAny = true;
+    });
+    if (settledAny) { updatePipelineStage('settle', true); showToast('Payment settled successfully', 'success'); }
+    else showToast(`${data.uploadsAttempted} upload(s) — no new settlements`, 'info');
+    await refresh();
+  } catch (e) {
+    addLog('error', 'Flush error — ' + e.message);
+  } finally {
+    btn.classList.remove('btn-loading'); btn.disabled = false;
+  }
+}
+
+/* ─── Reset ──────────────────────────────────────────────────────────── */
+function openResetDialog()  { document.getElementById('reset-modal').classList.add('open'); }
+function closeResetDialog() { document.getElementById('reset-modal').classList.remove('open'); }
+
+async function confirmReset() {
+  const btn = document.getElementById('btn-confirm-reset');
+  btn.classList.add('btn-loading'); btn.disabled = true;
+  try {
+    await fetch('/api/mesh/reset', { method: 'POST' });
+    gossipRounds = 0;
+    _positionCache = {}; // recompute layout on next render
+    _edgeCache     = [];
+    _lastDeviceKey = '';
+    document.getElementById('gossip-count').textContent = '0';
+    stageState = { compose: false, propagate: false, settle: false };
+    ['compose','propagate','settle'].forEach(s => {
+      const el = document.getElementById('stage-' + s);
+      if (el) el.classList.remove('active','done');
+    });
+    clearLog();
+    addLog('warn', 'Mesh and idempotency cache cleared. Ready for new simulation.');
+    showToast('Simulation reset', 'info');
+    closeResetDialog();
+    await refresh();
+  } catch (e) {
+    addLog('error', 'Reset failed — ' + e.message);
+  } finally {
+    btn.classList.remove('btn-loading'); btn.disabled = false;
+  }
+}
+
+/* ─── Activity Log ───────────────────────────────────────────────────── */
+function addLog(severity, message) {
+  const scroll = document.getElementById('log-scroll');
+  const empty  = document.getElementById('log-empty');
+  if (empty) empty.style.display = 'none';
+
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `
+    <div class="log-time">${time}</div>
+    <div class="log-sev ${severity}" aria-hidden="true"></div>
+    <div class="log-msg">${message}</div>
+  `;
+  // Prepend newest on top
+  const firstEntry = scroll.querySelector('.log-entry');
+  if (firstEntry) scroll.insertBefore(entry, firstEntry);
+  else scroll.appendChild(entry);
+
+  // Cap at 60 entries
+  const entries = scroll.querySelectorAll('.log-entry');
+  if (entries.length > 60) entries[entries.length - 1].remove();
+}
+
+function clearLog() {
+  const scroll = document.getElementById('log-scroll');
+  scroll.querySelectorAll('.log-entry').forEach(e => e.remove());
+  const empty = document.getElementById('log-empty');
+  if (empty) empty.style.display = '';
+}
+
+/* ─── Toast ──────────────────────────────────────────────────────────── */
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const icons = {
+    success: `<svg viewBox="0 0 24 24" fill="none" stroke="var(--green-bright)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
+    error:   `<svg viewBox="0 0 24 24" fill="none" stroke="var(--red-bright)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+    info:    `<svg viewBox="0 0 24 24" fill="none" stroke="var(--blue-bright)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.setAttribute('role', 'status');
+  toast.innerHTML = (icons[type] || '') + `<span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 3200);
+}
+
+/* ─── PIN Toggle ─────────────────────────────────────────────────────── */
+function togglePin(btn) {
+  const input = document.getElementById('pin');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+/* ─── Scroll-to-section helper ───────────────────────────────────────── */
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ─── Close modal on backdrop click ──────────────────────────────────── */
+document.getElementById('reset-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeResetDialog();
+});
+
+/* ─── Close modal on Escape key ──────────────────────────────────────── */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeResetDialog();
+});
+
+/* ─── Initial load + polling ─────────────────────────────────────────── */
 refresh();
 setInterval(refresh, 3000);
 </script>
